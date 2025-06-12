@@ -1,1 +1,7 @@
 Fullscreen = false
+
+[Walltaker]
+Enabled = false
+LinkID = 1
+APIKey = "asdf"
+CheckInterval = "15s"
