@@ -1,20 +1,22 @@
 package walltaker
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	"gioui.org/layout"
+	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
 
 	"github.com/ajanata/pictureframe"
+	"github.com/ajanata/pictureframe/internal/req"
 )
 
 type Walltaker struct {
@@ -27,6 +29,8 @@ type Walltaker struct {
 }
 
 var _ pictureframe.Module = (*Walltaker)(nil)
+
+var black = color.NRGBA{A: 0xFF}
 
 func New(c Config) *Walltaker {
 	if !c.Enabled {
@@ -72,7 +76,16 @@ func (w *Walltaker) Render(gtx layout.Context) error {
 	}
 	w.imgLock.Unlock()
 
-	w.img.Layout(gtx)
+	layout.Background{}.Layout(gtx,
+		func(gtx layout.Context) layout.Dimensions {
+			defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, black)
+			return layout.Dimensions{Size: gtx.Constraints.Min}
+		}, func(gtx layout.Context) layout.Dimensions {
+			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				return w.img.Layout(gtx)
+			})
+		})
 
 	return nil
 }
@@ -90,41 +103,24 @@ func (w *Walltaker) update() {
 }
 
 func (w *Walltaker) getNewImage() (image.Image, error) {
-	req, err := http.NewRequest(http.MethodGet,
-		fmt.Sprintf("https://walltaker.joi.how/api/links/%d.json", w.c.LinkID),
-		nil)
-	if err != nil {
-		return nil, err
-	}
+	ctx := context.Background()
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	decode := json.NewDecoder(resp.Body)
 	link := map[string]interface{}{}
-	err = decode.Decode(&link)
-	if err != nil {
-		return nil, err
-	}
-	_ = resp.Body.Close()
-
-	req, err = http.NewRequest(http.MethodGet, link["post_url"].(string), nil)
+	err := req.GetJson(ctx, fmt.Sprintf("https://walltaker.joi.how/api/links/%d.json", w.c.LinkID), &link)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err = http.DefaultClient.Do(req)
+	reader, err := req.GetRaw(ctx, link["post_url"].(string))
 	if err != nil {
 		return nil, err
 	}
 
-	img, _, err := image.Decode(resp.Body)
+	img, _, err := image.Decode(reader)
+	_ = reader.Close()
 	if err != nil {
 		return nil, err
 	}
-	_ = resp.Body.Close()
 
 	return img, nil
 }
