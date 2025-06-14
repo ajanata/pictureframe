@@ -28,6 +28,24 @@ type Walltaker struct {
 	imgLock  sync.Mutex
 }
 
+type link struct {
+	Id               int         `json:"id"`
+	Expires          interface{} `json:"expires"`
+	Terms            string      `json:"terms"`
+	Blacklist        string      `json:"blacklist"`
+	PostUrl          string      `json:"post_url"`
+	PostThumbnailUrl string      `json:"post_thumbnail_url"`
+	CreatedAt        time.Time   `json:"created_at"`
+	UpdatedAt        time.Time   `json:"updated_at"`
+	ResponseType     string      `json:"response_type"`
+	ResponseText     string      `json:"response_text"`
+	Username         string      `json:"username"`
+	SetBy            string      `json:"set_by"`
+	Online           bool        `json:"online"`
+	PostDescription  string      `json:"post_description"`
+	Url              string      `json:"url"`
+}
+
 var _ pictureframe.Module = (*Walltaker)(nil)
 
 var black = color.NRGBA{A: 0xFF}
@@ -105,13 +123,13 @@ func (w *Walltaker) update() {
 func (w *Walltaker) getNewImage() (image.Image, error) {
 	ctx := context.Background()
 
-	link := map[string]interface{}{}
-	err := req.GetJson(ctx, fmt.Sprintf("https://walltaker.joi.how/api/links/%d.json", w.c.LinkID), &link)
+	l := link{}
+	err := req.GetJson(ctx, fmt.Sprintf("https://walltaker.joi.how/api/links/%d.json", w.c.LinkID), &l)
 	if err != nil {
 		return nil, err
 	}
 
-	reader, err := req.GetRaw(ctx, link["post_url"].(string))
+	reader, err := req.GetRaw(ctx, l.PostUrl)
 	if err != nil {
 		return nil, err
 	}
