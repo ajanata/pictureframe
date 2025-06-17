@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	gioui.org v0.8.0
+	gioui.org/x v0.8.1
 	github.com/BurntSushi/toml v1.5.0
 )
 

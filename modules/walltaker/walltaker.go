@@ -14,6 +14,8 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/widget"
+	"gioui.org/widget/material"
+	"gioui.org/x/outlay"
 
 	"github.com/ajanata/pictureframe"
 	"github.com/ajanata/pictureframe/internal/req"
@@ -26,6 +28,11 @@ type Walltaker struct {
 	img      widget.Image
 	newImage image.Image
 	imgLock  sync.Mutex
+
+	theme     *material.Theme
+	btnLoveIt widget.Clickable
+	btnHateIt widget.Clickable
+	btnCame   widget.Clickable
 }
 
 type link struct {
@@ -46,6 +53,18 @@ type link struct {
 	Url              string      `json:"url"`
 }
 
+type response struct {
+	ApiKey string `json:"api_key"`
+	Type   string `json:"type"`
+	Text   string `json:"text"`
+}
+
+type reaction string
+
+const loveIt reaction = "horny"
+const hateIt reaction = "disgust"
+const came reaction = "came"
+
 var _ pictureframe.Module = (*Walltaker)(nil)
 
 var black = color.NRGBA{A: 0xFF}
@@ -55,7 +74,10 @@ func New(c Config) *Walltaker {
 		return nil
 	}
 
-	return &Walltaker{c: c}
+	return &Walltaker{
+		c:     c,
+		theme: material.NewTheme(),
+	}
 }
 
 func (w *Walltaker) Init() error {
@@ -85,6 +107,16 @@ func (w *Walltaker) Render(gtx layout.Context) error {
 		return nil
 	}
 
+	if w.btnLoveIt.Clicked(gtx) {
+		w.buttonPressed(loveIt)
+	}
+	if w.btnHateIt.Clicked(gtx) {
+		w.buttonPressed(hateIt)
+	}
+	if w.btnCame.Clicked(gtx) {
+		w.buttonPressed(came)
+	}
+
 	w.imgLock.Lock()
 	if w.newImage != nil {
 		imgOp := paint.NewImageOp(w.newImage)
@@ -96,16 +128,71 @@ func (w *Walltaker) Render(gtx layout.Context) error {
 
 	layout.Background{}.Layout(gtx,
 		func(gtx layout.Context) layout.Dimensions {
+			// black background
 			defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
 			paint.Fill(gtx.Ops, black)
 			return layout.Dimensions{Size: gtx.Constraints.Min}
 		}, func(gtx layout.Context) layout.Dimensions {
-			return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-				return w.img.Layout(gtx)
-			})
+			return layout.Background{}.Layout(gtx,
+				func(gtx layout.Context) layout.Dimensions {
+					// centered image
+					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return w.img.Layout(gtx)
+					})
+				},
+				func(gtx layout.Context) layout.Dimensions {
+					// buttons
+					return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						dim := func(axis layout.Axis, index, constraint int) int {
+							switch axis {
+							case layout.Vertical:
+								return 50
+							case layout.Horizontal:
+								return 75
+							default:
+								return 0
+							}
+						}
+
+						grid := &outlay.Grid{
+							Horizontal: outlay.AxisPosition{
+								First:     0,
+								Last:      0,
+								Offset:    0,
+								OffsetAbs: 0,
+								Length:    50,
+							},
+							Vertical: outlay.AxisPosition{
+								First:     0,
+								Last:      2,
+								Offset:    0,
+								OffsetAbs: 0,
+								Length:    25,
+							},
+						}
+
+						return grid.Layout(gtx, 3, 1, dim, func(gtx layout.Context, row, _ int) layout.Dimensions {
+							switch row {
+							case 0:
+								return w.button(&w.btnLoveIt, "love").Layout(gtx)
+							case 1:
+								return w.button(&w.btnHateIt, "hate").Layout(gtx)
+							case 2:
+								return w.button(&w.btnCame, "came").Layout(gtx)
+							}
+							return layout.Dimensions{}
+						})
+					})
+				})
 		})
 
 	return nil
+}
+
+func (w *Walltaker) button(btn *widget.Clickable, label string) material.ButtonStyle {
+	b := material.Button(w.theme, btn, label)
+	b.Background = color.NRGBA{A: 0x80}
+	return b
 }
 
 func (w *Walltaker) update() {
@@ -141,4 +228,21 @@ func (w *Walltaker) getNewImage() (image.Image, error) {
 	}
 
 	return img, nil
+}
+
+func (w *Walltaker) buttonPressed(reaction reaction) {
+	r := response{
+		ApiKey: w.c.APIKey,
+		Type:   string(reaction),
+	}
+
+	err := req.Post(context.Background(), fmt.Sprintf("https://walltaker.joi.how/api/links/%d/response.json", w.c.LinkID), r)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if reaction == hateIt {
+		w.update()
+	}
 }
