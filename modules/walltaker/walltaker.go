@@ -21,6 +21,8 @@ import (
 	"github.com/ajanata/pictureframe/internal/req"
 )
 
+const buttonAlpha = 0x40
+
 type Walltaker struct {
 	c Config
 
@@ -102,7 +104,7 @@ func (w *Walltaker) Init() error {
 	return nil
 }
 
-func (w *Walltaker) Render(gtx layout.Context) error {
+func (w *Walltaker) Render(gtx layout.Context, alpha byte) error {
 	if w == nil {
 		return nil
 	}
@@ -171,14 +173,27 @@ func (w *Walltaker) Render(gtx layout.Context) error {
 							},
 						}
 
+						ba := minByte(buttonAlpha, alpha)
 						return grid.Layout(gtx, 3, 1, dim, func(gtx layout.Context, row, _ int) layout.Dimensions {
 							switch row {
 							case 0:
-								return w.button(&w.btnLoveIt, "love").Layout(gtx)
+								a := ba
+								if w.btnLoveIt.Hovered() {
+									a = minByte(alpha, 0xFF)
+								}
+								return w.button(&w.btnLoveIt, "love", a).Layout(gtx)
 							case 1:
-								return w.button(&w.btnHateIt, "hate").Layout(gtx)
+								a := ba
+								if w.btnHateIt.Hovered() {
+									a = minByte(alpha, 0xFF)
+								}
+								return w.button(&w.btnHateIt, "hate", a).Layout(gtx)
 							case 2:
-								return w.button(&w.btnCame, "came").Layout(gtx)
+								a := ba
+								if w.btnCame.Hovered() {
+									a = minByte(alpha, 0xFF)
+								}
+								return w.button(&w.btnCame, "came", a).Layout(gtx)
 							}
 							return layout.Dimensions{}
 						})
@@ -189,9 +204,24 @@ func (w *Walltaker) Render(gtx layout.Context) error {
 	return nil
 }
 
-func (w *Walltaker) button(btn *widget.Clickable, label string) material.ButtonStyle {
+func maxByte(a, b byte) byte {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func minByte(a, b byte) byte {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (w *Walltaker) button(btn *widget.Clickable, label string, alpha byte) material.ButtonStyle {
 	b := material.Button(w.theme, btn, label)
-	b.Background = color.NRGBA{A: 0x80}
+	b.Background.A = alpha
+	b.Color.A = alpha
 	return b
 }
 

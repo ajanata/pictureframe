@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"gioui.org/app"
+	"gioui.org/f32"
+	"gioui.org/io/event"
+	"gioui.org/io/pointer"
 	"gioui.org/op"
 	"github.com/BurntSushi/toml"
 
@@ -50,6 +53,10 @@ func main() {
 
 func run(window *app.Window) error {
 	var ops op.Ops
+	var alpha byte = 0xFF
+
+	lastMove := time.Now()
+	var lastPos f32.Point
 	for {
 		switch e := window.Event().(type) {
 		case app.DestroyEvent:
@@ -57,8 +64,30 @@ func run(window *app.Window) error {
 		case app.FrameEvent:
 			gtx := app.NewContext(&ops, e)
 
+			var tag bool
+			event.Op(&ops, tag)
+			ev, ok := gtx.Event(pointer.Filter{
+				Target: tag,
+				Kinds:  pointer.Move,
+			})
+			if ok {
+				ev := ev.(pointer.Event)
+				// we get spurious events even if the position hasn't changed, so explicitly check it
+				if ev.Position != lastPos {
+					lastMove = time.Now()
+					lastPos = ev.Position
+					alpha = 0xFF
+				}
+			}
+
+			if time.Since(lastMove) > c.FadeDelay && alpha > 0 {
+				for i := c.FadeSpeed; i > 0 && alpha > 0; i-- {
+					alpha--
+				}
+			}
+
 			for _, m := range modules {
-				err := m.Render(gtx)
+				err := m.Render(gtx, alpha)
 				if err != nil {
 					return err
 				}

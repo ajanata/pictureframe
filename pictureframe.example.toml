@@ -1,4 +1,6 @@
 Fullscreen = false
+FadeDelay = "1s"
+FadeSpeed = 2
 
 [Walltaker]
 Enabled = false
