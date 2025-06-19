@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Fullscreen bool
-	FadeDelay  time.Duration
-	FadeSpeed  uint
+	Fullscreen      bool
+	FullscreenDelay time.Duration
+	FadeDelay       time.Duration
+	FadeSpeed       uint
 
 	Walltaker walltaker.Config
 	Scratch   scratch.Config

@@ -1,4 +1,6 @@
 Fullscreen = false
+FullscreenDelay = "200ms"
+
 FadeDelay = "1s"
 FadeSpeed = 2
 

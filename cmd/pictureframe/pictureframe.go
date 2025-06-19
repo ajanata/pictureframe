@@ -47,7 +47,11 @@ func main() {
 		window.Option(app.Title("PictureFrame"))
 		window.Option(app.MinSize(300, 200))
 		if c.Fullscreen {
-			window.Option(app.Fullscreen.Option())
+			// on Linux on my Raspberry Pi, at least, this fails if we do it right away so have a configurable delay.
+			go func() {
+				time.Sleep(c.FullscreenDelay)
+				window.Option(app.Fullscreen.Option())
+			}()
 		}
 		err := run(window)
 		if err != nil {
