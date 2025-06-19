@@ -10,5 +10,9 @@ LinkID = 1
 APIKey = "asdf"
 CheckInterval = "15s"
 
+[Walltaker.MaxSize]
+Width = 1920
+Height = 1080
+
 [Control]
 Enabled = true

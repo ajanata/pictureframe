@@ -10,4 +10,9 @@ type Config struct {
 	LinkID        int
 	APIKey        string
 	CheckInterval time.Duration
+
+	MaxSize struct {
+		Width  uint
+		Height uint
+	}
 }

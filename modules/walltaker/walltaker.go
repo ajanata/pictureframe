@@ -19,6 +19,7 @@ import (
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/outlay"
+	"github.com/nfnt/resize"
 
 	"github.com/ajanata/pictureframe"
 	"github.com/ajanata/pictureframe/internal/req"
@@ -275,6 +276,8 @@ func (w *Walltaker) getNewImage() (link, image.Image, error) {
 	if err != nil {
 		return l, nil, err
 	}
+
+	img = resize.Thumbnail(w.c.MaxSize.Width, w.c.MaxSize.Height, img, resize.Lanczos3)
 
 	return l, img, nil
 }
