@@ -10,9 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"gioui.org/font/gofont"
 	"gioui.org/layout"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
+	"gioui.org/text"
+	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 	"gioui.org/x/outlay"
@@ -26,10 +29,11 @@ const buttonAlpha = 0x40
 type Walltaker struct {
 	c Config
 
-	tick     *time.Ticker
-	img      widget.Image
-	newImage image.Image
-	imgLock  sync.Mutex
+	tick        *time.Ticker
+	img         widget.Image
+	newImage    image.Image
+	currentLink link
+	imgLock     sync.Mutex
 
 	theme     *material.Theme
 	btnLoveIt widget.Clickable
@@ -70,15 +74,19 @@ const came reaction = "came"
 var _ pictureframe.Module = (*Walltaker)(nil)
 
 var black = color.NRGBA{A: 0xFF}
+var white = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}
 
 func New(c Config) *Walltaker {
 	if !c.Enabled {
 		return nil
 	}
 
+	theme := material.NewTheme()
+	theme.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
+
 	return &Walltaker{
 		c:     c,
-		theme: material.NewTheme(),
+		theme: theme,
 	}
 }
 
@@ -130,85 +138,107 @@ func (w *Walltaker) Render(gtx layout.Context, alpha byte) error {
 
 	layout.Background{}.Layout(gtx,
 		func(gtx layout.Context) layout.Dimensions {
-			// black background
-			defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
-			paint.Fill(gtx.Ops, black)
-			return layout.Dimensions{Size: gtx.Constraints.Min}
+			return w.renderBackground(gtx)
 		}, func(gtx layout.Context) layout.Dimensions {
 			return layout.Background{}.Layout(gtx,
+				w.renderImage(),
 				func(gtx layout.Context) layout.Dimensions {
-					// centered image
-					return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return w.img.Layout(gtx)
-					})
-				},
-				func(gtx layout.Context) layout.Dimensions {
-					// buttons
-					return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						dim := func(axis layout.Axis, index, constraint int) int {
-							switch axis {
-							case layout.Vertical:
-								return 50
-							case layout.Horizontal:
-								return 75
-							default:
-								return 0
-							}
-						}
-
-						grid := &outlay.Grid{
-							Horizontal: outlay.AxisPosition{
-								First:     0,
-								Last:      0,
-								Offset:    0,
-								OffsetAbs: 0,
-								Length:    50,
-							},
-							Vertical: outlay.AxisPosition{
-								First:     0,
-								Last:      2,
-								Offset:    0,
-								OffsetAbs: 0,
-								Length:    25,
-							},
-						}
-
-						ba := minByte(buttonAlpha, alpha)
-						return grid.Layout(gtx, 3, 1, dim, func(gtx layout.Context, row, _ int) layout.Dimensions {
-							switch row {
-							case 0:
-								a := ba
-								if w.btnLoveIt.Hovered() {
-									a = minByte(alpha, 0xFF)
-								}
-								return w.button(&w.btnLoveIt, "love", a).Layout(gtx)
-							case 1:
-								a := ba
-								if w.btnHateIt.Hovered() {
-									a = minByte(alpha, 0xFF)
-								}
-								return w.button(&w.btnHateIt, "hate", a).Layout(gtx)
-							case 2:
-								a := ba
-								if w.btnCame.Hovered() {
-									a = minByte(alpha, 0xFF)
-								}
-								return w.button(&w.btnCame, "came", a).Layout(gtx)
-							}
-							return layout.Dimensions{}
+					return layout.Background{}.Layout(gtx,
+						func(gtx layout.Context) layout.Dimensions {
+							return w.renderCaption(gtx, alpha)
+						},
+						func(gtx layout.Context) layout.Dimensions {
+							return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+								return w.renderButtons(gtx, alpha)
+							})
 						})
-					})
 				})
 		})
 
 	return nil
 }
 
-func maxByte(a, b byte) byte {
-	if a > b {
-		return a
+func (w *Walltaker) renderCaption(gtx layout.Context, alpha byte) layout.Dimensions {
+	// updated at is definitely not working right
+	// ago := time.Now().Sub(w.currentLink.UpdatedAt).Round(time.Minute)
+	// lbl := material.H5(w.theme, fmt.Sprintf("set by %s %s ago", w.currentLink.SetBy, ago))
+	lbl := material.H5(w.theme, fmt.Sprintf("set by %s", w.currentLink.SetBy))
+	lbl.Color = white
+	lbl.Color.A = alpha
+	lbl.Alignment = text.Middle
+	return lbl.Layout(gtx)
+}
+
+func (w *Walltaker) renderButtons(gtx layout.Context, alpha byte) layout.Dimensions {
+	dim := func(axis layout.Axis, index, constraint int) int {
+		switch axis {
+		case layout.Vertical:
+			return 50
+		case layout.Horizontal:
+			return 75
+		default:
+			return 0
+		}
 	}
-	return b
+
+	grid := &outlay.Grid{
+		Horizontal: outlay.AxisPosition{
+			First:     0,
+			Last:      0,
+			Offset:    0,
+			OffsetAbs: 0,
+			Length:    50,
+		},
+		Vertical: outlay.AxisPosition{
+			First:     0,
+			Last:      2,
+			Offset:    0,
+			OffsetAbs: 0,
+			Length:    25,
+		},
+	}
+
+	ba := minByte(buttonAlpha, alpha)
+
+	return grid.Layout(gtx, 3, 1, dim, func(gtx layout.Context, row, _ int) layout.Dimensions {
+		return layout.UniformInset(unit.Dp(3)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			switch row {
+			case 0:
+				a := ba
+				if w.btnLoveIt.Hovered() {
+					a = minByte(alpha, 0xFF)
+				}
+				return w.button(&w.btnLoveIt, "love", a).Layout(gtx)
+			case 1:
+				a := ba
+				if w.btnHateIt.Hovered() {
+					a = minByte(alpha, 0xFF)
+				}
+				return w.button(&w.btnHateIt, "hate", a).Layout(gtx)
+			case 2:
+				a := ba
+				if w.btnCame.Hovered() {
+					a = minByte(alpha, 0xFF)
+				}
+				return w.button(&w.btnCame, "came", a).Layout(gtx)
+			}
+			return layout.Dimensions{}
+		})
+	})
+}
+
+func (w *Walltaker) renderBackground(gtx layout.Context) layout.Dimensions {
+	defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
+	paint.Fill(gtx.Ops, black)
+	return layout.Dimensions{Size: gtx.Constraints.Min}
+}
+
+func (w *Walltaker) renderImage() func(gtx layout.Context) layout.Dimensions {
+	return func(gtx layout.Context) layout.Dimensions {
+		return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			return w.img.Layout(gtx)
+		})
+	}
 }
 
 func minByte(a, b byte) byte {
@@ -226,7 +256,7 @@ func (w *Walltaker) button(btn *widget.Clickable, label string, alpha byte) mate
 }
 
 func (w *Walltaker) update() {
-	img, err := w.getNewImage()
+	l, img, err := w.getNewImage()
 	if err != nil {
 		log.Println(err)
 		return
@@ -234,30 +264,31 @@ func (w *Walltaker) update() {
 
 	w.imgLock.Lock()
 	w.newImage = img
+	w.currentLink = l
 	w.imgLock.Unlock()
 }
 
-func (w *Walltaker) getNewImage() (image.Image, error) {
+func (w *Walltaker) getNewImage() (link, image.Image, error) {
 	ctx := context.Background()
 
 	l := link{}
 	err := req.GetJson(ctx, fmt.Sprintf("https://walltaker.joi.how/api/links/%d.json", w.c.LinkID), &l)
 	if err != nil {
-		return nil, err
+		return l, nil, err
 	}
 
 	reader, err := req.GetRaw(ctx, l.PostUrl)
 	if err != nil {
-		return nil, err
+		return l, nil, err
 	}
 
 	img, _, err := image.Decode(reader)
 	_ = reader.Close()
 	if err != nil {
-		return nil, err
+		return l, nil, err
 	}
 
-	return img, nil
+	return l, img, nil
 }
 
 func (w *Walltaker) buttonPressed(reaction reaction) {
