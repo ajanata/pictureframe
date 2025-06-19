@@ -6,5 +6,5 @@ import (
 
 type Module interface {
 	Init() error
-	Render(gtx layout.Context, alpha byte) error
+	Render(gtx layout.Context, alpha byte) layout.Dimensions
 }

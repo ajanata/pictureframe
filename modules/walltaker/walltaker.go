@@ -12,7 +12,6 @@ import (
 
 	"gioui.org/font/gofont"
 	"gioui.org/layout"
-	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
@@ -73,7 +72,6 @@ const came reaction = "came"
 
 var _ pictureframe.Module = (*Walltaker)(nil)
 
-var black = color.NRGBA{A: 0xFF}
 var white = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}
 
 func New(c Config) *Walltaker {
@@ -112,9 +110,9 @@ func (w *Walltaker) Init() error {
 	return nil
 }
 
-func (w *Walltaker) Render(gtx layout.Context, alpha byte) error {
+func (w *Walltaker) Render(gtx layout.Context, alpha byte) layout.Dimensions {
 	if w == nil {
-		return nil
+		return layout.Dimensions{}
 	}
 
 	if w.btnLoveIt.Clicked(gtx) {
@@ -136,26 +134,21 @@ func (w *Walltaker) Render(gtx layout.Context, alpha byte) error {
 	}
 	w.imgLock.Unlock()
 
-	layout.Background{}.Layout(gtx,
+	return layout.Background{}.Layout(gtx,
+		w.renderImage(),
 		func(gtx layout.Context) layout.Dimensions {
-			return w.renderBackground(gtx)
-		}, func(gtx layout.Context) layout.Dimensions {
 			return layout.Background{}.Layout(gtx,
-				w.renderImage(),
 				func(gtx layout.Context) layout.Dimensions {
-					return layout.Background{}.Layout(gtx,
-						func(gtx layout.Context) layout.Dimensions {
-							return w.renderCaption(gtx, alpha)
-						},
-						func(gtx layout.Context) layout.Dimensions {
-							return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-								return w.renderButtons(gtx, alpha)
-							})
-						})
-				})
-		})
-
-	return nil
+					return w.renderCaption(gtx, alpha)
+				},
+				func(gtx layout.Context) layout.Dimensions {
+					return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+						return w.renderButtons(gtx, alpha)
+					})
+				},
+			)
+		},
+	)
 }
 
 func (w *Walltaker) renderCaption(gtx layout.Context, alpha byte) layout.Dimensions {
@@ -227,13 +220,7 @@ func (w *Walltaker) renderButtons(gtx layout.Context, alpha byte) layout.Dimensi
 	})
 }
 
-func (w *Walltaker) renderBackground(gtx layout.Context) layout.Dimensions {
-	defer clip.Rect{Max: gtx.Constraints.Min}.Push(gtx.Ops).Pop()
-	paint.Fill(gtx.Ops, black)
-	return layout.Dimensions{Size: gtx.Constraints.Min}
-}
-
-func (w *Walltaker) renderImage() func(gtx layout.Context) layout.Dimensions {
+func (w *Walltaker) renderImage() layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 			return w.img.Layout(gtx)
