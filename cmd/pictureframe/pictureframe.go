@@ -18,7 +18,7 @@ import (
 
 	"github.com/ajanata/pictureframe"
 	"github.com/ajanata/pictureframe/internal/config"
-	"github.com/ajanata/pictureframe/modules/scratch"
+	"github.com/ajanata/pictureframe/modules/control"
 	"github.com/ajanata/pictureframe/modules/walltaker"
 )
 
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	modules = append(modules, walltaker.New(c.Walltaker))
-	modules = append(modules, scratch.New(c.Scratch))
+	modules = append(modules, control.New(c.Control))
 
 	for _, m := range modules {
 		if err := m.Init(); err != nil {

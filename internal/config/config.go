@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/ajanata/pictureframe/modules/scratch"
+	"github.com/ajanata/pictureframe/modules/control"
 	"github.com/ajanata/pictureframe/modules/walltaker"
 )
 
@@ -14,5 +14,5 @@ type Config struct {
 	FadeSpeed       uint
 
 	Walltaker walltaker.Config
-	Scratch   scratch.Config
+	Control   control.Config
 }

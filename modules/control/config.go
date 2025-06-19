@@ -1,4 +1,4 @@
-package scratch
+package control
 
 type Config struct {
 	Enabled bool
