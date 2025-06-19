@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"gioui.org/app"
 	"gioui.org/font/gofont"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
@@ -110,7 +111,7 @@ func (w *Walltaker) Init() error {
 	return nil
 }
 
-func (w *Walltaker) Render(gtx layout.Context, alpha byte) layout.Dimensions {
+func (w *Walltaker) Render(gtx layout.Context, alpha byte, _ *app.Window) layout.Dimensions {
 	if w == nil {
 		return layout.Dimensions{}
 	}

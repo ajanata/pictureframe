@@ -18,6 +18,7 @@ import (
 
 	"github.com/ajanata/pictureframe"
 	"github.com/ajanata/pictureframe/internal/config"
+	"github.com/ajanata/pictureframe/modules/scratch"
 	"github.com/ajanata/pictureframe/modules/walltaker"
 )
 
@@ -33,6 +34,7 @@ func main() {
 	}
 
 	modules = append(modules, walltaker.New(c.Walltaker))
+	modules = append(modules, scratch.New(c.Scratch))
 
 	for _, m := range modules {
 		if err := m.Init(); err != nil {
@@ -94,7 +96,7 @@ func run(window *app.Window) error {
 
 			layout.Background{}.Layout(gtx,
 				renderBackground(),
-				renderModule(0, alpha),
+				renderModule(0, alpha, window),
 			)
 
 			gtx.Execute(op.InvalidateCmd{At: time.Now().Add(time.Second / 60)})
@@ -111,21 +113,21 @@ func renderBackground() layout.Widget {
 	}
 }
 
-func renderModule(i int, alpha byte) layout.Widget {
+func renderModule(i int, alpha byte, window *app.Window) layout.Widget {
 	if i+1 < len(modules) {
 		// there's another module to render
 		return func(gtx layout.Context) layout.Dimensions {
 			return layout.Background{}.Layout(gtx,
 				func(gtx layout.Context) layout.Dimensions {
-					return modules[i].Render(gtx, alpha)
+					return modules[i].Render(gtx, alpha, window)
 				},
-				renderModule(i+1, alpha),
+				renderModule(i+1, alpha, window),
 			)
 		}
 	} else {
 		// this is the last module
 		return func(gtx layout.Context) layout.Dimensions {
-			return modules[i].Render(gtx, alpha)
+			return modules[i].Render(gtx, alpha, window)
 		}
 	}
 }
