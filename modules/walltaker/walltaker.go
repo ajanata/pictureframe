@@ -141,11 +141,11 @@ func (w *Walltaker) Render(gtx layout.Context, alpha byte, _ *app.Window) layout
 		func(gtx layout.Context) layout.Dimensions {
 			return layout.Background{}.Layout(gtx,
 				func(gtx layout.Context) layout.Dimensions {
-					return w.renderCaption(gtx, alpha)
+					return maybe(alpha, w.renderCaption(gtx, alpha))
 				},
 				func(gtx layout.Context) layout.Dimensions {
 					return layout.SW.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return w.renderButtons(gtx, alpha)
+						return maybe(alpha, w.renderButtons(gtx, alpha))
 					})
 				},
 			)
@@ -297,4 +297,11 @@ func (w *Walltaker) buttonPressed(reaction reaction) {
 	if reaction == hateIt {
 		w.update()
 	}
+}
+
+func maybe(alpha byte, dim layout.Dimensions) layout.Dimensions {
+	if alpha > 0 {
+		return dim
+	}
+	return layout.Dimensions{}
 }
