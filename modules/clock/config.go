@@ -39,7 +39,7 @@ func New(c Config) *Clock {
 
 func (*Clock) Init() error { return nil }
 
-func (c *Clock) Render(gtx layout.Context, alpha byte, window *app.Window) layout.Dimensions {
+func (c *Clock) Render(gtx layout.Context, _ byte, _ *app.Window) layout.Dimensions {
 	if c == nil {
 		return layout.Dimensions{}
 	}
