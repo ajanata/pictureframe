@@ -45,7 +45,8 @@ func (c *Clock) Render(gtx layout.Context, _ byte, _ *app.Window) layout.Dimensi
 	}
 
 	return layout.SE.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		lbl := material.H5(c.theme, time.Now().Format(time.Kitchen))
+		// lbl := material.H5(c.theme, time.Now().Format(time.Kitchen))
+		lbl := material.H5(c.theme, time.Now().Format(time.StampMilli))
 		lbl.Color = white
 		lbl.Alignment = text.End
 		return lbl.Layout(gtx)

@@ -105,7 +105,13 @@ func run(window *app.Window) error {
 				renderModule(0, alpha, window),
 			)
 
-			gtx.Execute(op.InvalidateCmd{At: time.Now().Add(time.Second / 60)})
+			if alpha > 0 {
+				// if fade-out stuff is visible, redraw at 60 fps
+				gtx.Execute(op.InvalidateCmd{At: time.Now().Add(time.Second / 60)})
+			} else {
+				// otherwise redraw once per second
+				gtx.Execute(op.InvalidateCmd{At: time.Now().Add(time.Second)})
+			}
 			e.Frame(gtx.Ops)
 		}
 	}
