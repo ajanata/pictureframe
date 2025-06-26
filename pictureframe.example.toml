@@ -4,6 +4,9 @@ FullscreenDelay = "200ms"
 FadeDelay = "1s"
 FadeSpeed = 2
 
+[Clock]
+Enabled = true
+
 [Walltaker]
 Enabled = false
 LinkID = 1

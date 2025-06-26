@@ -3,6 +3,7 @@ package config
 import (
 	"time"
 
+	"github.com/ajanata/pictureframe/modules/clock"
 	"github.com/ajanata/pictureframe/modules/control"
 	"github.com/ajanata/pictureframe/modules/walltaker"
 )
@@ -15,4 +16,5 @@ type Config struct {
 
 	Walltaker walltaker.Config
 	Control   control.Config
+	Clock     clock.Config
 }
