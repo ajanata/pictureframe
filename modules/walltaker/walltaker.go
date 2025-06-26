@@ -193,7 +193,7 @@ func (w *Walltaker) renderButtons(gtx layout.Context, alpha byte) layout.Dimensi
 		},
 	}
 
-	ba := minByte(buttonAlpha, alpha)
+	ba := min(buttonAlpha, alpha)
 
 	return grid.Layout(gtx, 3, 1, dim, func(gtx layout.Context, row, _ int) layout.Dimensions {
 		return layout.UniformInset(unit.Dp(3)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
@@ -201,19 +201,19 @@ func (w *Walltaker) renderButtons(gtx layout.Context, alpha byte) layout.Dimensi
 			case 0:
 				a := ba
 				if w.btnLoveIt.Hovered() {
-					a = minByte(alpha, 0xFF)
+					a = min(alpha, 0xFF)
 				}
 				return w.button(&w.btnLoveIt, "love", a).Layout(gtx)
 			case 1:
 				a := ba
 				if w.btnHateIt.Hovered() {
-					a = minByte(alpha, 0xFF)
+					a = min(alpha, 0xFF)
 				}
 				return w.button(&w.btnHateIt, "hate", a).Layout(gtx)
 			case 2:
 				a := ba
 				if w.btnCame.Hovered() {
-					a = minByte(alpha, 0xFF)
+					a = min(alpha, 0xFF)
 				}
 				return w.button(&w.btnCame, "came", a).Layout(gtx)
 			}
@@ -228,13 +228,6 @@ func (w *Walltaker) renderImage() layout.Widget {
 			return w.img.Layout(gtx)
 		})
 	}
-}
-
-func minByte(a, b byte) byte {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func (w *Walltaker) button(btn *widget.Clickable, label string, alpha byte) material.ButtonStyle {
